@@ -25,7 +25,8 @@ app.use(morgan('dev'))
 app.use(cors({
   origin: [
     "http://localhost:3001",           // dashboard local
-    "http://localhost:4000",           // caso tenha outro ambiente
+    "http://localhost:4000",
+    "https://notiviq-web-production.up.railway.app",
     /\.notiviq\.vercel\.app$/,         // regex p/ permitir subdomínios (produção)
   ],
   credentials: true,
