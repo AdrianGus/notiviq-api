@@ -66,7 +66,7 @@ export class CampaignController {
       body: parsed.data.body,
       image: parsed.data.image,
       actions: actions,
-      target: parsed.data.target,
+      target: parsed.data.target ? parsed.data.target : { tags: [] },
       schedule: {
         mode: parsed.data.schedule.mode,
         startAt: parsed.data.schedule.startAt,

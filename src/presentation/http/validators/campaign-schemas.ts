@@ -10,7 +10,7 @@ export const CampaignInput = z.object({
   body: z.string(),
   image: z.string().url().optional(),
   actions: z.array(z.object({ action: z.string().optional(), title: z.string(), url: z.string().url() })).max(3),
-  target: z.object({ tags: z.array(z.string()) }),
+  target: z.object({ tags: z.array(z.string()) }).optional(),
   schedule: z.object({
     mode: z.nativeEnum(CampaignScheduleModeEnum),
     startAt: z.coerce.date(z.string()),
