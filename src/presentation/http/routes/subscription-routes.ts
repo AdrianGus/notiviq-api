@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { SubscriptionController } from '../controllers/subscription-controller'
-import { tenantContextMiddleware } from '../middlwares/tenant-context-middleware'
+import { SubscriptionController } from '../controllers/subscription-controller.js'
+import { tenantContextMiddleware } from '../middlwares/tenant-context-middleware.js'
 
 export const subscriptionsRouter = Router()
 

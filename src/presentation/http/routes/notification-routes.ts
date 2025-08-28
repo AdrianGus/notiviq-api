@@ -1,6 +1,6 @@
 import { Router } from "express"
-import { NotificationController } from "../controllers/notification-controller"
-import { tenantContextMiddleware } from "../middlwares/tenant-context-middleware"
+import { NotificationController } from "../controllers/notification-controller.js"
+import { tenantContextMiddleware } from "../middlwares/tenant-context-middleware.js"
 
 export const notificationRouter = Router()
 

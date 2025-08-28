@@ -1,11 +1,11 @@
-import { NotificationModel } from "../models/notification-model"
+import { NotificationModel } from "../models/notification-model.js"
 import type {
   NotificationRepository,
   NotificationListFilters,
   CreateForSendInput
-} from "../../../../domain/repositories/notification-repository"
-import type { Notification } from "../../../../domain/entities/notification"
-import type { Paginated } from "../../../../domain/repositories/paginated-list-dto"
+} from "../../../../domain/repositories/notification-repository.js"
+import type { Notification } from "../../../../domain/entities/notification.js"
+import type { Paginated } from "../../../../domain/repositories/paginated-list-dto.js"
 
 function serialize(d: any): Notification {
   return {

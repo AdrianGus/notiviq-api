@@ -1,4 +1,4 @@
-import { SubscriptionStatusEnum } from "../enums/subscription-status-enum";
+import { SubscriptionStatusEnum } from "../enums/subscription-status-enum.js";
 
 export type SubscriptionKeys = { p256dh: string; auth: string }
 

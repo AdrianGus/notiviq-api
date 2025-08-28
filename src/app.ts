@@ -6,10 +6,10 @@ import compression from 'compression'
 import morgan from 'morgan'
 import path from 'node:path'
 import { clerkMiddleware } from '@clerk/express'
-import { subscriptionsRouter } from './presentation/http/routes/subscription-routes'
-import { campaignsRouter } from './presentation/http/routes/campaign-routes'
-import { notificationRouter } from './presentation/http/routes/notification-routes'
-import { vapidRouter } from './presentation/http/routes/vapid-routes'
+import { subscriptionsRouter } from './presentation/http/routes/subscription-routes.js'
+import { campaignsRouter } from './presentation/http/routes/campaign-routes.js'
+import { notificationRouter } from './presentation/http/routes/notification-routes.js'
+import { vapidRouter } from './presentation/http/routes/vapid-routes.js'
 
 export const app = express()
 

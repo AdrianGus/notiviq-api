@@ -1,7 +1,7 @@
 import { getAuth, clerkClient } from '@clerk/express'
 import { randomUUID } from 'crypto'
-import { runWithCtx } from '../../../infra/context/request-context'
-import { MongoAccountRepository } from '../../../infra/db/mongoose/repositories/mongo-account-repository'
+import { runWithCtx } from '../../../infra/context/request-context.js'
+import { MongoAccountRepository } from '../../../infra/db/mongoose/repositories/mongo-account-repository.js'
 import type { RequestHandler } from 'express'
 
 const accountRepo = MongoAccountRepository()

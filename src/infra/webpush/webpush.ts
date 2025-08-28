@@ -1,6 +1,6 @@
 import webpush from 'web-push'
-import { MongoSubscriptionRepository } from '../db/mongoose/repositories/mongo-subscription-repository'
-import { SubscriptionStatusEnum } from '../../domain/enums/subscription-status-enum'
+import { MongoSubscriptionRepository } from '../db/mongoose/repositories/mongo-subscription-repository.js'
+import { SubscriptionStatusEnum } from '../../domain/enums/subscription-status-enum.js'
 
 const subject = process.env.VAPID_SUBJECT!
 const publicKey = process.env.VAPID_PUBLIC_KEY!

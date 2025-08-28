@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import { randomUUID } from "crypto"
-import { tenantScope } from "../plugins/tenant-scope"
-import { NotificationStatusEnum } from "../../../../domain/enums/notification-status-enum"
+import { tenantScope } from "../plugins/tenant-scope.js"
+import { NotificationStatusEnum } from "../../../../domain/enums/notification-status-enum.js"
 
 const NotificationSchema = new mongoose.Schema(
   {

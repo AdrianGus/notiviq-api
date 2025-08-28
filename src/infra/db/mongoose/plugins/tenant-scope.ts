@@ -1,5 +1,5 @@
 import type { Schema } from 'mongoose'
-import { getCtx } from '../../../context/request-context'
+import { getCtx } from '../../../context/request-context.js'
 
 export function tenantScope(schema: Schema) {
   const applyAccountId = function (this: any) {

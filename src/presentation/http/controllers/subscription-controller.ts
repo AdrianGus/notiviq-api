@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
-import { SubscriptionBody } from '../validators/subscription-schemas'
-import { MongoSubscriptionRepository } from '../../../infra/db/mongoose/repositories/mongo-subscription-repository'
-import { SubscriptionStatusEnum } from '../../../domain/enums/subscription-status-enum'
+import { SubscriptionBody } from '../validators/subscription-schemas.js'
+import { MongoSubscriptionRepository } from '../../../infra/db/mongoose/repositories/mongo-subscription-repository.js'
+import { SubscriptionStatusEnum } from '../../../domain/enums/subscription-status-enum.js'
 
 const subscriptionRepository = MongoSubscriptionRepository()
 

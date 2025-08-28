@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
 import { randomUUID } from 'crypto'
-import { tenantScope } from '../plugins/tenant-scope'
-import { CampaignStatusEnum } from '../../../../domain/enums/campaign-status-enum'
-import { CampaignScheduleModeEnum } from '../../../../domain/enums/campaign-schedule-mode-enum'
-import { CampaignScheduleIntervalEnum } from '../../../../domain/enums/campaign-schedule-interval-enum'
+import { tenantScope } from '../plugins/tenant-scope.js'
+import { CampaignStatusEnum } from '../../../../domain/enums/campaign-status-enum.js'
+import { CampaignScheduleModeEnum } from '../../../../domain/enums/campaign-schedule-mode-enum.js'
+import { CampaignScheduleIntervalEnum } from '../../../../domain/enums/campaign-schedule-interval-enum.js'
 
 const ActionSchema = new mongoose.Schema(
   {

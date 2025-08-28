@@ -1,5 +1,5 @@
-import { MongoSubscriptionRepository } from "../../infra/db/mongoose/repositories/mongo-subscription-repository"
-import { sendNotification } from "./notification-service"
+import { MongoSubscriptionRepository } from "../../infra/db/mongoose/repositories/mongo-subscription-repository.js"
+import { sendNotification } from "./notification-service.js"
 
 const subscriptionRepository = MongoSubscriptionRepository()
 

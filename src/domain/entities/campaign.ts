@@ -1,6 +1,6 @@
-import { CampaignScheduleIntervalEnum } from "../enums/campaign-schedule-interval-enum";
-import { CampaignScheduleModeEnum } from "../enums/campaign-schedule-mode-enum";
-import { CampaignStatusEnum } from "../enums/campaign-status-enum";
+import { CampaignScheduleIntervalEnum } from "../enums/campaign-schedule-interval-enum.js";
+import { CampaignScheduleModeEnum } from "../enums/campaign-schedule-mode-enum.js";
+import { CampaignStatusEnum } from "../enums/campaign-status-enum.js";
 
 export type NotificationAction = {
   action: string;   // slug gerado do título

@@ -1,8 +1,8 @@
-import { Subscription, SubscriptionKeys } from "../../../../domain/entities/subscription"
-import { Paginated } from "../../../../domain/repositories/paginated-list-dto"
-import { SubscriptionListFilters, SubscriptionRepository } from "../../../../domain/repositories/subscription-repository"
-import { SubscriptionModel } from "../models/subscription-model"
-import { createRepository, escapeRegExp } from "./base-repository"
+import { Subscription, SubscriptionKeys } from "../../../../domain/entities/subscription.js"
+import { Paginated } from "../../../../domain/repositories/paginated-list-dto.js"
+import { SubscriptionListFilters, SubscriptionRepository } from "../../../../domain/repositories/subscription-repository.js"
+import { SubscriptionModel } from "../models/subscription-model.js"
+import { createRepository, escapeRegExp } from "./base-repository.js"
 
 function serialize(d: any): Subscription {
   return {

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express"
-import { MongoNotificationRepository } from "../../../infra/db/mongoose/repositories/mongo-notification-repository"
-import { NotificationStatusEnum } from "../../../domain/enums/notification-status-enum"
+import { MongoNotificationRepository } from "../../../infra/db/mongoose/repositories/mongo-notification-repository.js"
+import { NotificationStatusEnum } from "../../../domain/enums/notification-status-enum.js"
 
 const notificationRepository = MongoNotificationRepository()
 

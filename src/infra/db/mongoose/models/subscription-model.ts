@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { randomUUID } from 'crypto'
-import { tenantScope } from '../plugins/tenant-scope'
-import { SubscriptionStatusEnum } from '../../../../domain/enums/subscription-status-enum'
+import { tenantScope } from '../plugins/tenant-scope.js'
+import { SubscriptionStatusEnum } from '../../../../domain/enums/subscription-status-enum.js'
 
 const SubscriptionSchema = new mongoose.Schema({
   _id: { type: String, default: randomUUID },

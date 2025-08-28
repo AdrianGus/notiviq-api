@@ -1,4 +1,4 @@
-import { NotificationStatusEnum } from "../enums/notification-status-enum"
+import { NotificationStatusEnum } from "../enums/notification-status-enum.js"
 
 export type Notification = {
   id: string

@@ -1,6 +1,6 @@
-import { Account } from "../../../../domain/entities/account"
-import { AccountRepository } from "../../../../domain/repositories/account-repository"
-import { AccountModel } from "../models/account-model"
+import { Account } from "../../../../domain/entities/account.js"
+import { AccountRepository } from "../../../../domain/repositories/account-repository.js"
+import { AccountModel } from "../models/account-model.js"
 
 function serialize(doc: any): Account {
   return {

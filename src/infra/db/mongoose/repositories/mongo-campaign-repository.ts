@@ -1,6 +1,6 @@
-import { CampaignRepository, CampaignListFilters } from "../../../../domain/repositories/campaign-repository"
-import { CampaignModel } from "../models/campaign-model"
-import { createRepository, escapeRegExp } from "./base-repository"
+import { CampaignRepository, CampaignListFilters } from "../../../../domain/repositories/campaign-repository.js"
+import { CampaignModel } from "../models/campaign-model.js"
+import { createRepository, escapeRegExp } from "./base-repository.js"
 
 function serialize(doc: any) {
   return {

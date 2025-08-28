@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SubscriptionStatusEnum } from '../../../domain/enums/subscription-status-enum'
+import { SubscriptionStatusEnum } from '../../../domain/enums/subscription-status-enum.js'
 
 export const SubscriptionBody = z.object({
   campaignId: z.string().min(6).optional(),

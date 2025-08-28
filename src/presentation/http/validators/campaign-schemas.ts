@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { CampaignStatusEnum } from '../../../domain/enums/campaign-status-enum'
-import { CampaignScheduleModeEnum } from '../../../domain/enums/campaign-schedule-mode-enum';
-import { CampaignScheduleIntervalEnum } from '../../../domain/enums/campaign-schedule-interval-enum';
+import { CampaignStatusEnum } from '../../../domain/enums/campaign-status-enum.js'
+import { CampaignScheduleModeEnum } from '../../../domain/enums/campaign-schedule-mode-enum.js';
+import { CampaignScheduleIntervalEnum } from '../../../domain/enums/campaign-schedule-interval-enum.js';
 
 export const CampaignInput = z.object({
   status: z.nativeEnum(CampaignStatusEnum),

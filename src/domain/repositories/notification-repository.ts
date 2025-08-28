@@ -1,6 +1,6 @@
-import { Paginated } from "./paginated-list-dto"
-import { Notification } from "../entities/notification"
-import { NotificationStatusEnum } from "../enums/notification-status-enum"
+import { Paginated } from "./paginated-list-dto.js"
+import { Notification } from "../entities/notification.js"
+import { NotificationStatusEnum } from "../enums/notification-status-enum.js"
 
 export type CreateForSendInput = {
   accountId: string

@@ -1,4 +1,4 @@
-import { Account } from "../entities/account"
+import { Account } from "../entities/account.js"
 
 export interface AccountRepository {
   findByExternalId(provider: string, externalId: string): Promise<Account | null>
