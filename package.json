@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "node --experimental-specifier-resolution=node dist/index.js",
+    "start": "node dist/index.js",
     "build": "tsc -p . && tsc-alias",
     "lint": "echo 'add eslint later'",
     "vapid:gen": "web-push generate-vapid-keys"
