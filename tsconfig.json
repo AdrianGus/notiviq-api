@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ES2022",
+    "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
@@ -11,8 +11,7 @@
     "resolveJsonModule": true,
     "types": [
       "node"
-    ],
-    "allowImportingTsExtensions": false
+    ]
   },
   "include": [
     "src"
