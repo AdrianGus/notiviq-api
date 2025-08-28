@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: notiviq-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile   # seu arquivo se chama "dockerfile" em minúsculo
+    container_name: notiviq-api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+    volumes:
+      # hot-reload do código
+      - ./src:/app/src
+      # mapeia src/public do host para /app/public no container
+      - ./src/public:/app/public
+      # arquivos de projeto
+      - ./tsconfig.json:/app/tsconfig.json
+    command: ["npm", "run", "dev"]
+
+volumes:
+  mongo-data:

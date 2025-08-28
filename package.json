@@ -1,0 +1,42 @@
+{
+  "name": "notiviq-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p .",
+    "lint": "echo 'add eslint later'",
+    "vapid:gen": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "@clerk/express": "^1.7.23",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "helmet": "^7.1.0",
+    "http-status-codes": "^2.3.0",
+    "jose": "^5.9.3",
+    "mongoose": "^8.6.1",
+    "morgan": "^1.10.0",
+    "node-cron": "^4.2.1",
+    "web-push": "^3.6.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.7.4",
+    "@types/web-push": "^3.6.4",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
+  }
+}
