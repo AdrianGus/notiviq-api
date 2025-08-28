@@ -18,28 +18,43 @@ app.use(compression())
 app.use(express.json({ limit: '1mb' }))
 app.use(morgan('dev'))
 
-// habilita CORS para o frontend
+/**
+ * CORS global — permite o dashboard e também outros domínios (p/ embed).
+ * Ajuste "origin" para incluir o domínio público do seu dashboard em produção.
+ */
 app.use(cors({
-  origin: ["http://localhost:3001"], // URL do dashboard
+  origin: [
+    "http://localhost:3001",           // dashboard local
+    "http://localhost:4000",           // caso tenha outro ambiente
+    /\.notiviq\.vercel\.app$/,         // regex p/ permitir subdomínios (produção)
+  ],
   credentials: true,
 }))
 
-// servir arquivos estáticos (incluindo subscribe.v1.js) com headers adequados
+/**
+ * Rota pública de arquivos estáticos (scripts de embed, service worker, etc.)
+ * Ex: /subscribe.v1.js e /sw.js
+ */
 app.use(
   '/',
   express.static(path.join(process.cwd(), 'public'), {
     index: false,
-    setHeaders: (res) => {
+    setHeaders: (res, filePath) => {
+      // headers p/ permitir consumo cross-origin
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      // força cache curto p/ facilitar testes
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Cache-Control', 'no-store')
+      }
     },
   })
 )
 
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
-// rotas privadas (autenticadas)
+// rotas privadas (auth obrigatória)
 app.use(clerkMiddleware())
 app.use('/vapid', vapidRouter)
 app.use('/campaigns', campaignsRouter)
