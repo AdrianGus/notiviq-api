@@ -1,14 +1,25 @@
-/* Service Worker (sw.js) — NotivIQ */
+/* Service Worker (sw.js) — NotivIQ (verbose + resubscribe) */
 
 const DEFAULT_API_BASE = "http://localhost:3000"; // ajuste para prod
 
+function dbgOn() {
+  try {
+    const url = new URL(self.location.href);
+    return url.searchParams.get("debug") === "1";
+  } catch { return false; }
+}
+const LOG = dbgOn();
+function log() { if (LOG) try { console.log.apply(console, ["[SW]"].concat([].slice.call(arguments))); } catch (_) { } }
+function warn() { if (LOG) try { console.warn.apply(console, ["[SW]"].concat([].slice.call(arguments))); } catch (_) { } }
+function err() { if (LOG) try { console.error.apply(console, ["[SW]"].concat([].slice.call(arguments))); } catch (_) { } }
+
 self.addEventListener("install", () => {
-  console.log("[SW] instalado");
+  log("install");
   self.skipWaiting();
 });
 
 self.addEventListener("activate", () => {
-  console.log("[SW] ativado");
+  log("activate");
   self.clients.claim();
 });
 
@@ -17,7 +28,10 @@ function getApiBase() {
   try {
     const url = new URL(self.location.href);
     const qp = url.searchParams.get("api");
-    if (qp) return qp.replace(/\/+$/, "");
+    if (qp) {
+      log("API via query", qp);
+      return qp.replace(/\/+$/, "");
+    }
   } catch { }
   if (DEFAULT_API_BASE) return DEFAULT_API_BASE.replace(/\/+$/, "");
   return self.location.origin.replace(/\/+$/, "");
@@ -30,6 +44,26 @@ function slugify(s) {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
+
+// helpers extra
+function u8(b64url) {
+  try {
+    var padding = "=".repeat((4 - (b64url.length % 4)) % 4);
+    var b64 = (b64url + padding).replace(/-/g, "+").replace(/_/g, "/");
+    var raw = atob(b64);
+    var arr = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  } catch { return null; }
+}
+function getQParam(name) {
+  try { return new URL(self.location.href).searchParams.get(name); } catch { return null; }
+}
+function getVapidKeyU8() { var v = getQParam("vapid"); return v ? u8(v) : null; }
+function getAccount() { return getQParam("account"); }
+function getCampaign() { return getQParam("campaign"); }
+function getPK() { return getQParam("pk"); }
+
 async function postEvent(nid, type, extra) {
   if (!nid) return;
   const API_BASE = getApiBase();
@@ -42,6 +76,7 @@ async function postEvent(nid, type, extra) {
   const url = joinUrl(API_BASE, path);
   const body = JSON.stringify({ ...(extra || {}), ts: new Date().toISOString() });
 
+  log("POST", type, url, body);
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -51,11 +86,9 @@ async function postEvent(nid, type, extra) {
       headers: { "Content-Type": "application/json" },
       body,
     });
-    if (!res.ok && res.status !== 404 && res.status !== 410) {
-      console.warn("[SW] postEvent HTTP", res.status);
-    }
-  } catch (err) {
-    console.error("[SW] postEvent falhou", type, err);
+    log("RES", type, res.status);
+  } catch (e) {
+    err("postEvent", type, e);
   }
 }
 
@@ -66,6 +99,8 @@ self.addEventListener("push", (event) => {
   let payload = {};
   try { payload = event.data.json() || {}; }
   catch { try { payload = JSON.parse(event.data.text() || "{}"); } catch { } }
+
+  log("push payload", payload);
 
   const base = payload || {};
   const nested = base.data || {};
@@ -100,6 +135,7 @@ self.addEventListener("push", (event) => {
   };
 
   event.waitUntil((async () => {
+    log("showNotification", { nid, title, options });
     await self.registration.showNotification(title, options);
     await postEvent(nid, "shown");
   })());
@@ -107,6 +143,7 @@ self.addEventListener("push", (event) => {
 
 /* ---------------- CLICK / CLOSE ---------------- */
 self.addEventListener("notificationclick", (event) => {
+  log("notificationclick", event.action);
   event.notification.close();
   const nid = event.notification?.data?.nid;
   const dataActions = event.notification?.data?.actions || [];
@@ -121,29 +158,55 @@ self.addEventListener("notificationclick", (event) => {
 });
 
 self.addEventListener("notificationclose", (event) => {
+  log("notificationclose");
   const nid = event.notification?.data?.nid;
   event.waitUntil(postEvent(nid, "close"));
 });
 
 /* ---------------- SUBSCRIPTION CHANGE ---------------- */
 self.addEventListener("pushsubscriptionchange", (event) => {
+  log("pushsubscriptionchange");
   event.waitUntil((async () => {
     try {
-      const oldSub = event.subscription || (await self.registration.pushManager.getSubscription());
+      const oldSub = event.oldSubscription || event.subscription || (await self.registration.pushManager.getSubscription());
       const oldEndpoint = oldSub && oldSub.endpoint;
+      log("oldEndpoint", oldEndpoint);
 
-      // Informa as janelas para cancelarem no backend usando o id salvo no localStorage
+      // 1) Avise páginas para cancelarem no backend (usando os IDs salvos)
       const clis = await clients.matchAll({ includeUncontrolled: true, type: "window" });
       for (const c of clis) {
-        try {
-          c.postMessage({ type: "NOTIVIQ_SUBSCRIPTION_CHANGED", endpoint: oldEndpoint || null });
-        } catch (_) { }
+        try { c.postMessage({ type: "NOTIVIQ_SUBSCRIPTION_CHANGED", endpoint: oldEndpoint || null }); } catch (_) { }
       }
 
-      // Dica: aqui poderíamos tentar unsubscribe() do antigo, mas em geral o browser já faz a rotação.
-      // await oldSub?.unsubscribe();
-    } catch (err) {
-      console.error("[SW] pushsubscriptionchange erro", err);
+      // 2) Se temos VAPID na query, tentar re-subscrever e criar nova inscrição direto do SW
+      const vapidU8 = getVapidKeyU8();
+      if (vapidU8) {
+        try { await oldSub?.unsubscribe(); } catch (_) { }
+        let newSub = await self.registration.pushManager.getSubscription();
+        if (!newSub) {
+          newSub = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidU8 });
+        }
+        log("new endpoint", newSub?.endpoint);
+
+        const API_BASE = getApiBase();
+        const account = getAccount();
+        const campaign = getCampaign();
+        const pk = getPK();
+
+        if (API_BASE && account && newSub) {
+          const url = joinUrl(API_BASE, "/subscriptions");
+          const body = { accountId: account, campaignId: campaign || undefined, subscription: newSub, tags: [], locale: undefined };
+          const headers = { "Content-Type": "application/json" };
+          if (pk) headers["X-NotivIQ-Key"] = pk;
+
+          log("POST (resubscribe)", url, body);
+          const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), cache: "no-store", credentials: "omit" });
+          const txt = await res.text().catch(() => "");
+          log("RES (resubscribe)", res.status, txt);
+        }
+      }
+    } catch (e) {
+      err("pushsubscriptionchange error", e);
     }
   })());
 });

@@ -89,13 +89,16 @@ app.get('/sw.js', (req, res, next) => {
 })
 
 app.get('/iframe.html', (req, res, next) => {
-  const file = path.join(process.cwd(), 'public', 'iframe.html')
-  res.sendFile(file, {
+  res.sendFile(path.join(process.cwd(), 'public', 'iframe.html'), {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': '*',
       'Cross-Origin-Resource-Policy': 'cross-origin',
+      // Permitir que QUALQUER site embele o iframe (zero fricção)
+      'Content-Security-Policy': "frame-ancestors *",
+      // Compatibilidade com navegadores antigos (não padrão, mas inofensivo aqui)
+      'X-Frame-Options': 'ALLOWALL',
     },
   }, (err) => { if (err) next(err) })
 })

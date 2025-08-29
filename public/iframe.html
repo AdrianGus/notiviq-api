@@ -9,18 +9,20 @@
 <script>
 (function(){
   "use strict";
+  const TAG = "[NotivIQ iframe]";
 
   // base64url -> Uint8Array
   function u8(b64url){
-    var padding = "=".repeat((4 - (b64url.length % 4)) % 4);
-    var b64 = (b64url + padding).replace(/-/g, "+").replace(/_/g, "/");
-    var raw = atob(b64);
-    var arr = new Uint8Array(raw.length);
-    for (var i=0;i<raw.length;i++) arr[i] = raw.charCodeAt(i);
+    const padding = "=".repeat((4 - (b64url.length % 4)) % 4);
+    const b64 = (b64url + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for (let i=0;i<raw.length;i++) arr[i] = raw.charCodeAt(i);
     return arr;
   }
 
   async function postJSON(url, body, headers){
+    console.log(TAG, "POST", url, body);
     const res = await fetch(url, {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, headers || {}),
@@ -28,43 +30,54 @@
       cache: "no-store",
       credentials: "omit"
     });
-    if (!res.ok) {
-      let text = "";
-      try { text = await res.text(); } catch {}
-      throw new Error("HTTP " + res.status + (text ? (": "+text) : ""));
-    }
-    try { return await res.json(); } catch { return {}; }
+    const txt = await res.text().catch(()=> "");
+    console.log(TAG, "RES", res.status, txt);
+    if (!res.ok) throw new Error("HTTP " + res.status + (txt ? (": "+txt) : ""));
+    try { return JSON.parse(txt || "{}"); } catch { return {}; }
   }
 
   window.addEventListener("message", async (ev) => {
     const data = ev.data || {};
     if (data.type !== "NOTIVIQ_REGISTER") return;
 
-    const origin = ev.origin; // origem do parent
+    const origin = ev.origin;
     const send = (payload) => ev.source && ev.source.postMessage(payload, origin);
 
-    const api = String(data.api || "").replace(/\/$/, "");
-    const headers = {};
-    if (data.publishableKey) headers["X-NotivIQ-Key"] = data.publishableKey;
-
     try {
-      // 1) Registrar SW neste origin do iframe
-      const swUrl = "/sw.js?api=" + encodeURIComponent(api);
+      const api = String(data.api || "").replace(/\/$/, "");
+      const headers = {};
+      if (data.publishableKey) headers["X-NotivIQ-Key"] = data.publishableKey;
+
+      console.log(TAG, "start register", { api, accountId: data.accountId, campaignId: data.campaignId });
+
+      // SW no MESMO origin do iframe, com parâmetros úteis e debug
+      const swUrl =
+        "/sw.js?api=" + encodeURIComponent(api) +
+        "&vapid=" + encodeURIComponent(data.vapid) +
+        "&account=" + encodeURIComponent(data.accountId) +
+        "&campaign=" + encodeURIComponent(data.campaignId || "") +
+        (data.publishableKey ? "&pk=" + encodeURIComponent(data.publishableKey) : "") +
+        "&debug=1";
+
+      console.log(TAG, "register SW", swUrl);
       const reg = await navigator.serviceWorker.register(swUrl);
       await navigator.serviceWorker.ready;
+      console.log(TAG, "SW ready", reg?.scope);
 
-      // 2) Permissão
       const perm = await Notification.requestPermission();
+      console.log(TAG, "permission", perm);
       if (perm !== "granted") throw new Error("permission_denied");
 
-      // 3) Subscription (reutiliza se já existir)
-      const sub = (await reg.pushManager.getSubscription())
-        || (await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: u8(data.vapid)
-          }));
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        console.log(TAG, "no subscription, subscribing…");
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: u8(data.vapid)
+        });
+      }
+      console.log(TAG, "subscription endpoint", sub?.endpoint);
 
-      // 4) POST /subscriptions
       const payload = {
         accountId: data.accountId,
         campaignId: data.campaignId || undefined,
@@ -74,7 +87,8 @@
       };
       const result = await postJSON(api + "/subscriptions", payload, headers);
 
-      // 5) Resposta ao parent
+      console.log(TAG, "subscription created", result);
+
       send({
         type: "NOTIVIQ_REGISTER_RESULT",
         reqId: data.reqId,
@@ -87,6 +101,7 @@
         }
       });
     } catch (err) {
+      console.error(TAG, err);
       send({
         type: "NOTIVIQ_REGISTER_RESULT",
         reqId: data.reqId,
