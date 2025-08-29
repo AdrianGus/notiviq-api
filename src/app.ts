@@ -10,6 +10,7 @@ import { subscriptionsRouter } from './presentation/http/routes/subscription-rou
 import { campaignsRouter } from './presentation/http/routes/campaign-routes.js'
 import { notificationRouter } from './presentation/http/routes/notification-routes.js'
 import { vapidRouter } from './presentation/http/routes/vapid-routes.js'
+import { accountsRouter } from './presentation/http/routes/account-routes.js'
 
 export const app = express()
 
@@ -58,6 +59,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 // rotas privadas (auth obrigatória)
 app.use(clerkMiddleware())
 app.use('/vapid', vapidRouter)
+app.use('/accounts', accountsRouter)
 app.use('/campaigns', campaignsRouter)
 app.use('/subscriptions', subscriptionsRouter)
 app.use('/notifications', notificationRouter)
