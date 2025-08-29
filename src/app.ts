@@ -28,6 +28,7 @@ app.use(cors({
     "http://localhost:3001",           // dashboard local
     "http://localhost:4000",
     "https://notiviq-web-production.up.railway.app",
+    "https://dashboard.notiviq.com.br",
     /\.notiviq\.vercel\.app$/,         // regex p/ permitir subdomínios (produção)
   ],
   credentials: true,
