@@ -35,6 +35,7 @@ export type Campaign = {
 
   schedule: CampaignSchedule;
 
+  lastDispatchedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 };

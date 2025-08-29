@@ -21,11 +21,10 @@ services:
     depends_on:
       - mongo
     volumes:
-      # hot-reload do código
       - ./src:/app/src
-      # mapeia src/public do host para /app/public no container
-      - ./src/public:/app/public
-      # arquivos de projeto
+      # ❌ antes: - ./src/public:/app/public
+      # ✅ agora:
+      - ./public:/app/public
       - ./tsconfig.json:/app/tsconfig.json
     command: ["npm", "run", "dev"]
 

@@ -14,7 +14,15 @@ import { accountsRouter } from './presentation/http/routes/account-routes.js'
 
 export const app = express()
 
-app.use(helmet())
+app.use(helmet({
+  // permite servir JS/CSS/imagens para outras origens (embed)
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  // evita bloquear popups/redirects do SW (safe default p/ apps)
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  // não precisamos de COEP; deixar false evita bloqueios desnecessários
+  crossOriginEmbedderPolicy: false,
+}))
+
 app.use(compression())
 app.use(express.json({ limit: '1mb' }))
 app.use(morgan('dev'))

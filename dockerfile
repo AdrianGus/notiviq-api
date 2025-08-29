@@ -9,8 +9,7 @@ RUN npm i --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
 
-# expõe os estáticos em /app/public, copiando do src/public
-# (no compose também montamos bind, então em dev você edita e vê ao vivo)
-COPY src/public ./public
+# ✅ copie a pasta 'public' da raiz (e não src/public)
+COPY public ./public
 
 CMD ["npm", "run", "dev"]

@@ -1,3 +1,4 @@
+// src/infra/db/mongoose/models/campaign-model.ts
 import mongoose from 'mongoose'
 import { randomUUID } from 'crypto'
 import { tenantScope } from '../plugins/tenant-scope.js'
@@ -21,13 +22,14 @@ const ScheduleSchema = new mongoose.Schema(
       enum: Object.values(CampaignScheduleModeEnum),
       required: true,
     },
-    startAt: { type: Date, required: true },
+    startAt: { type: Date, required: true, index: true },
     interval: {
       type: String,
       enum: Object.values(CampaignScheduleIntervalEnum),
       required: false,
+      index: true,
     },
-    endAt: { type: Date, required: false },
+    endAt: { type: Date, required: false, index: true },
   },
   { _id: false }
 )
@@ -41,6 +43,7 @@ const CampaignSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(CampaignStatusEnum),
       default: CampaignStatusEnum.DRAFT,
+      index: true,
     },
 
     title: { type: String, required: true, trim: true },
@@ -55,9 +58,17 @@ const CampaignSchema = new mongoose.Schema(
     },
 
     schedule: { type: ScheduleSchema, required: true },
+
+    /** último boundary disparado */
+    lastDispatchedAt: { type: Date, required: false, index: true },
   },
   { timestamps: true }
 )
+
+// Índices compostos úteis pro cron e buscas
+CampaignSchema.index({ status: 1, 'schedule.mode': 1, 'schedule.startAt': 1 })
+CampaignSchema.index({ status: 1, 'schedule.mode': 1, 'schedule.endAt': 1 })
+CampaignSchema.index({ status: 1, lastDispatchedAt: 1 })
 
 CampaignSchema.plugin(tenantScope)
 
