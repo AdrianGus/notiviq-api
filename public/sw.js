@@ -1,4 +1,4 @@
-/* Service Worker (sw.js) — NotivIQ (nid ou notificationId) */
+/* Service Worker (sw.js) — NotivIQ */
 
 const DEFAULT_API_BASE = "http://localhost:3000"; // ajuste para prod
 
@@ -12,40 +12,28 @@ self.addEventListener("activate", () => {
   self.clients.claim();
 });
 
-/* Utilidades */
+/* ---------------- Utils ---------------- */
 function getApiBase() {
   try {
     const url = new URL(self.location.href);
     const qp = url.searchParams.get("api");
-    if (qp) {
-      console.log("[SW] API base via query =", qp);
-      return qp.replace(/\/+$/, "");
-    }
+    if (qp) return qp.replace(/\/+$/, "");
   } catch { }
   if (DEFAULT_API_BASE) return DEFAULT_API_BASE.replace(/\/+$/, "");
   return self.location.origin.replace(/\/+$/, "");
 }
-
 function joinUrl(base, path) {
   return `${String(base).replace(/\/+$/, "")}/${String(path).replace(/^\/+/, "")}`;
 }
-
 function slugify(s) {
-  return String(s || "abrir")
-    .toLowerCase()
+  return String(s || "abrir").toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
-
-async function reportEvent(nid, type, extra) {
-  if (!nid) {
-    console.warn("[SW] reportEvent ignorado (sem nid)", type);
-    return;
-  }
+async function postEvent(nid, type, extra) {
+  if (!nid) return;
   const API_BASE = getApiBase();
   if (!API_BASE) return;
-
   let path = "";
   if (type === "shown") path = `/notifications/${nid}/shown`;
   else if (type === "click") path = `/notifications/${nid}/click`;
@@ -53,8 +41,6 @@ async function reportEvent(nid, type, extra) {
 
   const url = joinUrl(API_BASE, path);
   const body = JSON.stringify({ ...(extra || {}), ts: new Date().toISOString() });
-
-  console.log(`[SW] reportEvent → ${url}`, body);
 
   try {
     const res = await fetch(url, {
@@ -65,13 +51,15 @@ async function reportEvent(nid, type, extra) {
       headers: { "Content-Type": "application/json" },
       body,
     });
-    console.log("[SW] reportEvent resposta", type, res.status);
+    if (!res.ok && res.status !== 404 && res.status !== 410) {
+      console.warn("[SW] postEvent HTTP", res.status);
+    }
   } catch (err) {
-    console.error("[SW] reportEvent falhou", type, err);
+    console.error("[SW] postEvent falhou", type, err);
   }
 }
 
-/* ====================== PUSH ====================== */
+/* ---------------- PUSH ---------------- */
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
@@ -79,16 +67,10 @@ self.addEventListener("push", (event) => {
   try { payload = event.data.json() || {}; }
   catch { try { payload = JSON.parse(event.data.text() || "{}"); } catch { } }
 
-  console.log("[SW] push payload recebido", payload);
-
   const base = payload || {};
   const nested = base.data || {};
 
-  // aceitar nid OU notificationId
   const nid = base.nid ?? nested.nid ?? base.notificationId ?? nested.notificationId;
-  if (nid) console.log("[SW] usando nid =", nid);
-  else console.warn("[SW] nenhum nid/notificationId encontrado");
-
   const title = base.title ?? nested.title ?? "Notificação";
   const body = base.body ?? nested.body ?? "";
   const icon = base.icon ?? nested.icon ?? "/icon.png";
@@ -118,18 +100,14 @@ self.addEventListener("push", (event) => {
   };
 
   event.waitUntil((async () => {
-    console.log("[SW] exibindo notificação", { nid, title, options });
     await self.registration.showNotification(title, options);
-    await reportEvent(nid, "shown");
+    await postEvent(nid, "shown");
   })());
 });
 
-/* ================== CLICK / CLOSE ================== */
+/* ---------------- CLICK / CLOSE ---------------- */
 self.addEventListener("notificationclick", (event) => {
-  console.log("[SW] notificationclick", event);
-
   event.notification.close();
-
   const nid = event.notification?.data?.nid;
   const dataActions = event.notification?.data?.actions || [];
   const clickedKey = event.action;
@@ -137,44 +115,35 @@ self.addEventListener("notificationclick", (event) => {
   const target = chosen?.url || event.notification?.data?.url;
 
   event.waitUntil((async () => {
-    console.log("[SW] clicado →", { nid, action: chosen?.action, target });
-    await reportEvent(nid, "click", { action: chosen?.action });
+    await postEvent(nid, "click", { action: chosen?.action });
     if (target) await clients.openWindow(target);
   })());
 });
 
 self.addEventListener("notificationclose", (event) => {
-  console.log("[SW] notificationclose", event);
   const nid = event.notification?.data?.nid;
-  event.waitUntil(reportEvent(nid, "close"));
+  event.waitUntil(postEvent(nid, "close"));
 });
 
-/* ================== SUBSCRIPTION CHANGE ================== */
+/* ---------------- SUBSCRIPTION CHANGE ---------------- */
 self.addEventListener("pushsubscriptionchange", (event) => {
-  console.log("[SW] pushsubscriptionchange detectado", event);
-
   event.waitUntil((async () => {
     try {
-      // pega subscription antiga
       const oldSub = event.subscription || (await self.registration.pushManager.getSubscription());
-      if (oldSub) {
-        const API_BASE = getApiBase();
-        const url = joinUrl(API_BASE, `/subscriptions/${oldSub.nid}`);
+      const oldEndpoint = oldSub && oldSub.endpoint;
 
-        // PATCH status: CANCELLED
-        const res = await fetch(url, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            endpoint: oldSub.endpoint,
-            status: "CANCELLED",
-            ts: new Date().toISOString(),
-          }),
-        });
-        console.log("[SW] subscription cancel reportado", res.status);
+      // Informa as janelas para cancelarem no backend usando o id salvo no localStorage
+      const clis = await clients.matchAll({ includeUncontrolled: true, type: "window" });
+      for (const c of clis) {
+        try {
+          c.postMessage({ type: "NOTIVIQ_SUBSCRIPTION_CHANGED", endpoint: oldEndpoint || null });
+        } catch (_) { }
       }
+
+      // Dica: aqui poderíamos tentar unsubscribe() do antigo, mas em geral o browser já faz a rotação.
+      // await oldSub?.unsubscribe();
     } catch (err) {
-      console.error("[SW] falha ao reportar cancelamento", err);
+      console.error("[SW] pushsubscriptionchange erro", err);
     }
   })());
 });

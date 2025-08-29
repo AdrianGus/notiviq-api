@@ -14,12 +14,17 @@ import { accountsRouter } from './presentation/http/routes/account-routes.js'
 
 export const app = express()
 
+/** --- Config de host/wildcard --- */
+const WILDCARD_BASE = process.env.WILDCARD_BASE || '.notiviq.com.br'
+const API_HOST_WHITELIST = new Set<string>([
+  'api.notiviq.com.br',
+  'localhost',
+  '127.0.0.1'
+])
+
 app.use(helmet({
-  // permite servir JS/CSS/imagens para outras origens (embed)
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  // evita bloquear popups/redirects do SW (safe default p/ apps)
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
-  // não precisamos de COEP; deixar false evita bloqueios desnecessários
   crossOriginEmbedderPolicy: false,
 }))
 
@@ -28,34 +33,84 @@ app.use(express.json({ limit: '1mb' }))
 app.use(morgan('dev'))
 
 /**
- * CORS global — permite o dashboard e também outros domínios (p/ embed).
- * Ajuste "origin" para incluir o domínio público do seu dashboard em produção.
+ * CORS global — inclui subdomínios *.notiviq.com.br (iframe/SW)
  */
 app.use(cors({
   origin: [
-    "http://localhost:3001",           // dashboard local
-    "http://localhost:4000",
-    "https://notiviq-web-production.up.railway.app",
-    "https://dashboard.notiviq.com.br",
-    /\.notiviq\.vercel\.app$/,         // regex p/ permitir subdomínios (produção)
+    'http://localhost:3001',
+    'http://localhost:4000',
+    'https://notiviq-web-production.up.railway.app',
+    'https://dashboard.notiviq.com.br',
+    /\.notiviq\.vercel\.app$/,
+    /\.notiviq\.com\.br$/, // <— permite vilmar.notiviq.com.br etc.
   ],
   credentials: true,
 }))
 
 /**
- * Rota pública de arquivos estáticos (scripts de embed, service worker, etc.)
- * Ex: /subscribe.v1.js e /sw.js
+ * Guard de host: em subdomínios do wildcard (ex.: vilmar.notiviq.com.br),
+ * só permitem /sw.js, /iframe.html, /favicon.ico e /icons/*.
+ * Bloqueia qualquer outra rota para não expor a API nesses hosts.
+ */
+app.use((req, res, next) => {
+  const host = (req.hostname || '').toLowerCase()
+  const isWildcard = host.endsWith(WILDCARD_BASE)
+  const isApiHost = API_HOST_WHITELIST.has(host) || host === 'localhost'
+
+  if (isWildcard && !isApiHost) {
+    const p = req.path
+    const allowed =
+      p === '/sw.js' ||
+      p === '/iframe.html' ||
+      p === '/favicon.ico' ||
+      p.startsWith('/icons/')
+    if (!allowed) {
+      return res.status(404).end()
+    }
+  }
+  next()
+})
+
+/**
+ * Respostas dedicadas com headers para /sw.js e /iframe.html
+ * (em qualquer host; especialmente úteis no wildcard)
+ */
+app.get('/sw.js', (req, res, next) => {
+  const file = path.join(process.cwd(), 'public', 'sw.js')
+  res.sendFile(file, {
+    headers: {
+      'Content-Type': 'application/javascript; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Service-Worker-Allowed': '/',
+      'Access-Control-Allow-Origin': '*',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+    },
+  }, (err) => { if (err) next(err) })
+})
+
+app.get('/iframe.html', (req, res, next) => {
+  const file = path.join(process.cwd(), 'public', 'iframe.html')
+  res.sendFile(file, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+    },
+  }, (err) => { if (err) next(err) })
+})
+
+/**
+ * Estáticos restantes (subscribe.v1.js etc.)
  */
 app.use(
   '/',
   express.static(path.join(process.cwd(), 'public'), {
     index: false,
     setHeaders: (res, filePath) => {
-      // headers p/ permitir consumo cross-origin
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-      // força cache curto p/ facilitar testes
       if (filePath.endsWith('.js')) {
         res.setHeader('Cache-Control', 'no-store')
       }
